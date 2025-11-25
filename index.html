@@ -154,23 +154,79 @@
         maxZoom: 18,
     }).addTo(map);
 
-    L.marker([37.5665, 126.9780]).addTo(map)
+    // 기본 마커 (서울)
+    var baseMarker = L.marker([37.5665, 126.9780]).addTo(map)
         .bindPopup("현재 위치 (기본값)")
         .openPopup();
 
-    /* 챗봇 기능 (임시 버전) */
+    /* ✅ 1) 더미 대피소 데이터 (나중에 행안부 API로 교체 가능) */
+    const dummyShelters = [
+        { name: "대피소 A (예시)", lat: 37.57, lon: 126.975 },
+        { name: "대피소 B (예시)", lat: 37.565, lon: 126.982 },
+        { name: "대피소 C (예시)", lat: 37.562, lon: 126.97 }
+    ];
+    let shelterMarkers = [];
+
+    function clearShelters() {
+        shelterMarkers.forEach(m => map.removeLayer(m));
+        shelterMarkers = [];
+    }
+
+    function showDummyShelters() {
+        clearShelters();
+        dummyShelters.forEach(s => {
+            const m = L.marker([s.lat, s.lon]).addTo(map)
+                .bindPopup(`<b>${s.name}</b><br>실제 데이터와 연동 예정`);
+            shelterMarkers.push(m);
+        });
+    }
+
+    /* ✅ 2) 나중에 행안부 API 프록시 서버로부터 진짜 데이터 받기 */
+    const SHELTER_API_ENDPOINT = "https://example.com/shelter"; 
+    // 나중에 서버 만든 뒤 진짜 주소로 바꾸면 됨
+
+    async function loadRealShelters() {
+        clearShelters();
+        try {
+            const res = await fetch(SHELTER_API_ENDPOINT);
+            const data = await res.json(); // { shelters: [ {name, lat, lon, address}, ... ] }
+
+            (data.shelters || []).forEach(s => {
+                const m = L.marker([s.lat, s.lon]).addTo(map)
+                    .bindPopup(`<b>${s.name}</b><br>${s.address || ""}`);
+                shelterMarkers.push(m);
+            });
+
+            if (!data.shelters || data.shelters.length === 0) {
+                alert("실제 대피소 데이터가 없어 더미 데이터로 보여줄게!");
+                showDummyShelters();
+            }
+        } catch (e) {
+            console.error(e);
+            alert("서버에서 대피소를 가져오지 못했어요. (콘솔 확인)");
+            showDummyShelters(); // 실패하면 일단 더미 찍기
+        }
+    }
+
+    /* ✅ 3) 버튼 클릭 시 함수 연결 */
+    // HTML에서 ‘대피소 정보’ 버튼에 아래 onClick을 넣어도 되고,
+    // 지금처럼 querySelector로 이벤트 걸어도 됨
+    const shelterBtn = document.querySelector(".menu-btn:nth-child(1)");
+    shelterBtn.onclick = () => {
+        // 나중에 ready되면 loadRealShelters()로 바꾸면 됨
+        showDummyShelters();
+    };
+
+    /* 기존 챗봇 코드 (조금 아래) */
     function sendMessage() {
         const input = document.getElementById("chat-input");
         const message = input.value.trim();
         if (!message) return;
 
-        // 사용자 메시지 표시
         addMessage(message, "user");
-
-        // 입력창 초기화
         input.value = "";
 
-        // 챗봇 응답 (임시 더미 로직)
+        // 임시 응답 (뒤에서 GPT 버전으로 바꿔줄거임)
         setTimeout(() => {
             let reply = "지금 많이 불안하셨겠어요. 우선은 호흡을 천천히 고르고, 주변에 안전한 사람이 있는지 확인해볼까요?";
             addMessage(reply, "bot");
