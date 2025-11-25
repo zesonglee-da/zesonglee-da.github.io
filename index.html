@@ -13,7 +13,6 @@
             background: #f2f4f7;
         }
 
-        /* 헤더 */
         header {
             background: #1f6feb;
             padding: 15px;
@@ -23,7 +22,6 @@
             font-weight: bold;
         }
 
-        /* 메뉴 버튼 */
         .menu-container {
             display: flex;
             justify-content: space-around;
@@ -46,7 +44,6 @@
             background: #e7ecf3;
         }
 
-        /* 지도 영역 */
         #map {
             height: 300px;
             margin: 0 10px;
@@ -54,7 +51,6 @@
             overflow: hidden;
         }
 
-        /* 챗봇 */
         #chatbox {
             margin: 20px 10px;
             background: white;
@@ -117,54 +113,76 @@
     <!-- Leaflet 지도 -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
 </head>
+
 <body>
 
 <header>
     재난·심리상담 긴급 지원 시스템
 </header>
 
-<!-- 메뉴 버튼들 -->
 <div class="menu-container">
-    <div class="menu-btn" onclick="alert('대피소 기능은 추후 API 연동 예정!')">🏥 대피소 정보</div>
-    <div class="menu-btn" onclick="alert('도로 통제 기능은 추후 API 연동 예정!')">🚧 도로 통제</div>
-    <div class="menu-btn" onclick="alert('재난문자 연동 예정!')">📢 재난 알림</div>
+    <div class="menu-btn" id="btn-shelter">🏥 대피소 정보</div>
+    <div class="menu-btn">🚧 도로 통제</div>
+    <div class="menu-btn">📢 재난 알림</div>
 </div>
 
-<!-- 지도 -->
 <div id="map"></div>
 
-<!-- 상담 챗봇 -->
 <div id="chatbox">
     <h3>🧑‍⚕️ 심리 상담 챗봇</h3>
     <div id="messages"></div>
 
     <div id="input-area">
-        <input type="text" id="chat-input" placeholder="지금 어떤 상황인가요?" />
+        <input type="text" id="chat-input" placeholder="어떤 상황인가요?" />
         <button id="send-btn" onclick="sendMessage()">전송</button>
     </div>
 </div>
 
 <script>
-    /* 지도 초기화 */
-    var map = L.map('map').setView([37.5665, 126.9780], 12); // 서울 기준
+    /* ============================
+       0) 서버 엔드포인트 설정
+       ============================ */
+    const WORKER_BASE = "https://YOUR_WORKER_URL.workers.dev";  // ⚠️ 여기를 네 Worker 기본 주소로 변경
+
+    const CHAT_ENDPOINT = `${WORKER_BASE}/chatbot`;
+    const SHELTER_API   = `${WORKER_BASE}/shelters`;
+
+    /* ============================
+       1) 아이콘 설정 (현재 위치 vs 대피소)
+       ============================ */
+    const userIcon = L.icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+        shadowUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-shadow.png',
+        iconSize:     [25, 41],
+        iconAnchor:   [12, 41],
+        popupAnchor:  [1, -34],
+        shadowSize:   [41, 41]
+    });
+
+    const shelterIcon = L.icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+        shadowUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-shadow.png',
+        iconSize:     [25, 41],
+        iconAnchor:   [12, 41],
+        popupAnchor:  [1, -34],
+        shadowSize:   [41, 41]
+    });
+
+    /* ============================
+       2) 지도 초기화
+       ============================ */
+    var map = L.map('map').setView([37.5665, 126.9780], 12);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 18,
     }).addTo(map);
 
-    // 기본 마커 (서울)
-    var baseMarker = L.marker([37.5665, 126.9780]).addTo(map)
-        .bindPopup("현재 위치 (기본값)")
+    // 파란색 = 현재 위치(기본)
+    var baseMarker = L.marker([37.5665, 126.9780], { icon: userIcon }).addTo(map)
+        .bindPopup("현재 위치 (기본값: 서울 시청 근처)")
         .openPopup();
 
-    /* ✅ 1) 더미 대피소 데이터 (나중에 행안부 API로 교체 가능) */
-    const dummyShelters = [
-        { name: "대피소 A (예시)", lat: 37.57, lon: 126.975 },
-        { name: "대피소 B (예시)", lat: 37.565, lon: 126.982 },
-        { name: "대피소 C (예시)", lat: 37.562, lon: 126.97 }
-    ];
     let shelterMarkers = [];
 
     function clearShelters() {
@@ -172,53 +190,43 @@
         shelterMarkers = [];
     }
 
-    function showDummyShelters() {
-        clearShelters();
-        dummyShelters.forEach(s => {
-            const m = L.marker([s.lat, s.lon]).addTo(map)
-                .bindPopup(`<b>${s.name}</b><br>실제 데이터와 연동 예정`);
-            shelterMarkers.push(m);
-        });
-    }
-
-    /* ✅ 2) 나중에 행안부 API 프록시 서버로부터 진짜 데이터 받기 */
-    const SHELTER_API_ENDPOINT = "https://example.com/shelter"; 
-    // 나중에 서버 만든 뒤 진짜 주소로 바꾸면 됨
-
     async function loadRealShelters() {
         clearShelters();
         try {
-            const res = await fetch(SHELTER_API_ENDPOINT);
-            const data = await res.json(); // { shelters: [ {name, lat, lon, address}, ... ] }
+            const res = await fetch(SHELTER_API);
+            const data = await res.json();
 
             (data.shelters || []).forEach(s => {
-                const m = L.marker([s.lat, s.lon]).addTo(map)
-                    .bindPopup(`<b>${s.name}</b><br>${s.address || ""}`);
+                const m = L.marker([s.lat, s.lon], { icon: shelterIcon })
+                    .addTo(map)
+                    .bindPopup(`<b>${s.name}</b><br>${s.address}`);
                 shelterMarkers.push(m);
             });
 
-            if (!data.shelters || data.shelters.length === 0) {
-                alert("실제 대피소 데이터가 없어 더미 데이터로 보여줄게!");
-                showDummyShelters();
+            if ((data.shelters || []).length === 0) {
+                alert("대피소 데이터 없음");
             }
         } catch (e) {
             console.error(e);
-            alert("서버에서 대피소를 가져오지 못했어요. (콘솔 확인)");
-            showDummyShelters(); // 실패하면 일단 더미 찍기
+            alert("대피소 서버 연결 실패");
         }
     }
 
-    /* ✅ 3) 버튼 클릭 시 함수 연결 */
-    // HTML에서 ‘대피소 정보’ 버튼에 아래 onClick을 넣어도 되고,
-    // 지금처럼 querySelector로 이벤트 걸어도 됨
-    const shelterBtn = document.querySelector(".menu-btn:nth-child(1)");
-    shelterBtn.onclick = () => {
-        // 나중에 ready되면 loadRealShelters()로 바꾸면 됨
-        showDummyShelters();
-    };
+    document.getElementById("btn-shelter").onclick = loadRealShelters;
 
-    /* 기존 챗봇 코드 (조금 아래) */
-    function sendMessage() {
+    /* ============================
+       3) 챗봇 기능
+       ============================ */
+    function addMessage(text, sender) {
+        const messages = document.getElementById("messages");
+        const div = document.createElement("div");
+        div.className = sender === "user" ? "msg-user" : "msg-bot";
+        div.innerText = text;
+        messages.appendChild(div);
+        messages.scrollTop = messages.scrollHeight;
+    }
+
+    async function sendMessage() {
         const input = document.getElementById("chat-input");
         const message = input.value.trim();
         if (!message) return;
@@ -226,24 +234,19 @@
         addMessage(message, "user");
         input.value = "";
 
-        // 임시 응답 (뒤에서 GPT 버전으로 바꿔줄거임)
-        setTimeout(() => {
-            let reply = "지금 많이 불안하셨겠어요. 우선은 호흡을 천천히 고르고, 주변에 안전한 사람이 있는지 확인해볼까요?";
-            addMessage(reply, "bot");
-        }, 600);
-    }
+        try {
+            const res = await fetch(CHAT_ENDPOINT, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message })
+            });
 
-    function addMessage(text, sender) {
-        const messages = document.getElementById("messages");
-        const div = document.createElement("div");
-
-        if (sender === "user") div.className = "msg-user";
-        else div.className = "msg-bot";
-
-        div.innerText = text;
-        messages.appendChild(div);
-
-        messages.scrollTop = messages.scrollHeight;
+            const data = await res.json();
+            addMessage(data.reply, "bot");
+        } catch (e) {
+            console.error(e);
+            addMessage("서버 오류! 잠시 후 다시 시도해 주세요.", "bot");
+        }
     }
 </script>
 
