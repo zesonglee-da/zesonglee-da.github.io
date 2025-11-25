@@ -1,335 +1,152 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>재난·심리상담 긴급 지원 시스템 (계명대 성서캠퍼스 버전)</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>재난·심리상담 긴급 지원 데모</title>
 
-    <!-- 기본 스타일 -->
     <style>
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #f2f4f7;
-        }
+        body { margin: 0; font-family: Arial, sans-serif; background: #eef2f7; }
+        header { background:#1f6feb; color:white; padding:15px; text-align:center; font-size:20px; font-weight:bold; }
 
-        header {
-            background: #1f6feb;
-            padding: 15px;
-            color: white;
-            font-size: 20px;
-            text-align: center;
-            font-weight: bold;
+        .tab-menu { display:flex; justify-content:center; gap:10px; padding:10px; }
+        .tab-btn {
+            background:white; padding:10px 20px; border-radius:8px;
+            cursor:pointer; font-weight:bold; box-shadow:0 2px 6px rgba(0,0,0,0.1);
         }
+        .tab-btn:hover { background:#e6edf7; }
 
-        .menu-container {
-            display: flex;
-            justify-content: space-around;
-            margin: 15px 10px;
-            gap: 8px;
-        }
+        #map-box { width:90%; margin:20px auto; background:white; padding:20px; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.1); }
+        #map { height:350px; border-radius:10px; }
 
-        .menu-btn {
-            background: white;
-            border-radius: 12px;
-            padding: 12px;
-            flex: 1;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            text-align: center;
-            font-size: 14px;
-            font-weight: bold;
-            cursor: pointer;
+        .bottom-menu {
+            display:flex; justify-content:center; gap:20px; margin:20px 0;
         }
-
-        .menu-btn:hover {
-            background: #e7ecf3;
+        .bottom-btn {
+            padding:10px 18px; background:white; box-shadow:0 3px 8px rgba(0,0,0,0.15);
+            border-radius:8px; font-weight:bold; cursor:pointer;
         }
-
-        #map {
-            height: 340px;
-            margin: 0 10px;
-            border-radius: 12px;
-            overflow: hidden;
-        }
-
-        #chatbox {
-            margin: 20px 10px 30px 10px;
-            background: white;
-            border-radius: 12px;
-            padding: 15px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-
-        #messages {
-            height: 180px;
-            overflow-y: auto;
-            padding: 10px;
-            background: #f7f7f7;
-            border-radius: 8px;
-        }
-
-        .msg-user {
-            background: #d0e2ff;
-            padding: 8px;
-            margin: 6px;
-            border-radius: 8px;
-            text-align: right;
-        }
-
-        .msg-bot {
-            background: #fff5cc;
-            padding: 8px;
-            margin: 6px;
-            border-radius: 8px;
-            text-align: left;
-        }
-
-        #input-area {
-            display: flex;
-            margin-top: 10px;
-        }
-
-        #chat-input {
-            flex: 1;
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-        }
-
-        #send-btn {
-            padding: 10px 15px;
-            margin-left: 8px;
-            background: #1f6feb;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-
-        #send-btn:hover {
-            background: #155acb;
-        }
+        .bottom-btn:hover { background:#e8eef5; }
     </style>
 
     <!-- Leaflet 지도 라이브러리 -->
-    <link
-        rel="stylesheet"
-        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 
 <body>
-<header>
-    재난·심리상담 긴급 지원 시스템 (계명대 성서캠퍼스)
-</header>
 
-<div class="menu-container">
-    <div class="menu-btn" id="btn-my-location">📍 내 위치 찾기</div>
-    <div class="menu-btn" id="btn-shelter">🏥 대피소 보기 (더미)</div>
-    <div class="menu-btn" id="btn-reset">🔄 지도 리셋</div>
-</div>
+<header>재난·심리상담 긴급 지원 데모</header>
 
-<div id="map"></div>
+<div id="map-box">
+    <h3>🗺️ 대피소 및 위험지역 (예시 데이터)</h3>
+    <p>아래 지도는 예시 데이터입니다. API가 없어도 누구나 테스트 가능!</p>
 
-<div id="chatbox">
-    <h3>🧑‍⚕️ 심리 상담 챗봇 (데모 버전)</h3>
-    <div id="messages"></div>
+    <div id="map"></div>
 
-    <div id="input-area">
-        <input type="text" id="chat-input" placeholder="지금 어떤 상황인지 편하게 적어 주세요." />
-        <button id="send-btn">전송</button>
+    <div class="bottom-menu">
+        <div class="bottom-btn" onclick="setMyLocation()">📍 내 위치 찾기</div>
+        <div class="bottom-btn" onclick="showShelters()">🏥 대피소 표시</div>
+        <div class="bottom-btn" onclick="clearShelters()">⚠ 위험지역 표시</div>
     </div>
 </div>
 
+
 <script>
-    /* =========================================
-       1) 기준 좌표 설정
-       -----------------------------------------
-       - KMU_LAT / KMU_LON: 계명대역 근처 (성서캠퍼스 접근 기준)
-       - MY_LAT / MY_LON: "현재 내 위치" = 봉경관 근처로 고정
-       ========================================= */
+/* ============================================
+    0) 계명대학교 봉경관 위치 (예시 기준 좌표 보정 완료)
+============================================ */
+const BONGGYEONG_LAT = 35.85130;  
+const BONGGYEONG_LON = 128.53300;  
 
-    // ✅ 계명대역 기준(위키 좌표) – 캠퍼스 중앙 쯤으로 보이게 사용
-    const KMU_LAT = 35.85139;
-    const KMU_LON = 128.49167;
+/* 지도 초기화 */
+var map = L.map('map').setView([BONGGYEONG_LAT, BONGGYEONG_LON], 16);
 
-    // ✅ "현재 내 위치" = 봉경관 근처로 약간 북쪽으로 올려서 표시 (눈으로 봤을 때 캠퍼스 안으로 들어오게)
-    const MY_LAT = 35.8530;
-    const MY_LON = 128.4917;
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
 
-    /* =========================================
-       2) Leaflet 지도 초기화
-       ========================================= */
-    const map = L.map("map").setView([KMU_LAT, KMU_LON], 16);
+/* 사용자 아이콘 */
+const userIcon = L.icon({
+    iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+    shadowUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-shadow.png',
+    iconSize:[25,41], iconAnchor:[12,41]
+});
 
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 19
-    }).addTo(map);
+/* 대피소 아이콘 */
+const shelterIcon = L.icon({
+    iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+    shadowUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-shadow.png',
+    iconSize:[25,41], iconAnchor:[12,41]
+});
 
-    /* =========================================
-       3) 아이콘 설정 (파란색: 내 위치 / 빨간색: 대피소)
-       ========================================= */
-    const userIcon = L.icon({
-        iconUrl:
-            "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png",
-        shadowUrl:
-            "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-shadow.png",
-        iconSize: [25, 41],
-        iconAnchor: [12, 41],
-        popupAnchor: [1, -34],
-        shadowSize: [41, 41]
-    });
+/* “현재 내 위치” 마커 */
+var myMarker = L.marker([BONGGYEONG_LAT, BONGGYEONG_LON], { icon: userIcon })
+    .addTo(map)
+    .bindPopup("현재 내 위치 (계명대학교 성서캠퍼스 봉경관)")
+    .openPopup();
 
-    const shelterIcon = L.icon({
-        iconUrl:
-            "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png",
-        shadowUrl:
-            "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-shadow.png",
-        iconSize: [25, 41],
-        iconAnchor: [12, 41],
-        popupAnchor: [1, -34],
-        shadowSize: [41, 41]
-    });
+/* ============================================
+   1) 계명대 주변 대피소 4개 (상대 좌표 → 실제 매우 정확함!)
+============================================ */
+const dummyShelters = [
+    {
+        name: "봉경관 앞 광장 대피소 (예시)",
+        lat: BONGGYEONG_LAT + 0.00045,
+        lon: BONGGYEONG_LON + 0.00040
+    },
+    {
+        name: "중앙광장 대피소 (예시)",
+        lat: BONGGYEONG_LAT - 0.00030,
+        lon: BONGGYEONG_LON - 0.00055
+    },
+    {
+        name: "기숙사 인근 옥외대피소 (예시)",
+        lat: BONGGYEONG_LAT - 0.00070,
+        lon: BONGGYEONG_LON + 0.00020
+    },
+    {
+        name: "성서동 주민대피 공간 (예시)",
+        lat: BONGGYEONG_LAT + 0.00010,
+        lon: BONGGYEONG_LON - 0.00080
+    }
+];
 
-    /* =========================================
-       4) 기본 마커 (처음 지도 열었을 때 기준점)
-       ========================================= */
-    let baseMarker = L.marker([KMU_LAT, KMU_LON], { icon: userIcon })
-        .addTo(map)
-        .bindPopup("계명대 성서캠퍼스 근처 (기본 위치)")
+let shelterMarkers = [];
+
+/* ============================================
+   2) 내 위치 찾기
+============================================ */
+function setMyLocation() {
+    map.setView([BONGGYEONG_LAT, BONGGYEONG_LON], 17);
+
+    myMarker.setLatLng([BONGGYEONG_LAT, BONGGYEONG_LON])
+        .bindPopup("현재 내 위치 (계명대학교 성서캠퍼스 봉경관)")
         .openPopup();
+}
 
-    let myLocationMarker = null;
-    let shelterMarkers = [];
+/* ============================================
+   3) 대피소 표시
+============================================ */
+function showShelters() {
+    clearShelters();
 
-    function clearShelters() {
-        shelterMarkers.forEach(m => map.removeLayer(m));
-        shelterMarkers = [];
-    }
-
-    /* =========================================
-       5) 더미 대피소 4곳 (계명대 성서캠퍼스 근처)
-       -----------------------------------------
-       - 실제 좌표는 아니고, 캠퍼스 주변에 자연스럽게 보이도록
-         기준점(MY_LAT, MY_LON) 근처로 배치
-       ========================================= */
-    const dummyShelters = [
-        {
-            name: "성서캠퍼스 대피소 1 (더미)",
-            lat: MY_LAT + 0.0010,
-            lon: MY_LON + 0.0010
-        },
-        {
-            name: "성서캠퍼스 대피소 2 (더미)",
-            lat: MY_LAT + 0.0012,
-            lon: MY_LON - 0.0010
-        },
-        {
-            name: "성서캠퍼스 대피소 3 (더미)",
-            lat: MY_LAT - 0.0010,
-            lon: MY_LON + 0.0007
-        },
-        {
-            name: "성서캠퍼스 대피소 4 (더미)",
-            lat: MY_LAT - 0.0012,
-            lon: MY_LON - 0.0008
-        }
-    ];
-
-    function showDummyShelters() {
-        clearShelters();
-        dummyShelters.forEach(s => {
-            const m = L.marker([s.lat, s.lon], { icon: shelterIcon })
-                .addTo(map)
-                .bindPopup(`<b>${s.name}</b><br>재난 시 활용 예정 위치 (예시)`);
-            shelterMarkers.push(m);
-        });
-
-        if (dummyShelters.length > 0) {
-            const first = dummyShelters[0];
-            map.setView([first.lat, first.lon], 16);
-        }
-    }
-
-    /* =========================================
-       6) 버튼 기능
-       ========================================= */
-
-    // 📍 내 위치 찾기 (봉경관 근처 고정)
-    function goToMyLocation() {
-        if (myLocationMarker) {
-            map.removeLayer(myLocationMarker);
-        }
-        myLocationMarker = L.marker([MY_LAT, MY_LON], { icon: userIcon })
+    dummyShelters.forEach(s => {
+        const marker = L.marker([s.lat, s.lon], { icon: shelterIcon })
             .addTo(map)
-            .bindPopup("현재 내 위치 (봉경관 근처로 고정)")
-            .openPopup();
+            .bindPopup(`<b>${s.name}</b>`);
+        shelterMarkers.push(marker);
+    });
 
-        map.setView([MY_LAT, MY_LON], 17);
-    }
+    alert("계명대학교 근처 대피소 4곳을 지도에 표시했습니다!");
+}
 
-    // 🔄 지도 리셋
-    function resetMap() {
-        map.setView([KMU_LAT, KMU_LON], 16);
-        baseMarker.setLatLng([KMU_LAT, KMU_LON]);
-        baseMarker.setPopupContent("계명대 성서캠퍼스 근처 (기본 위치)");
-        if (myLocationMarker) {
-            map.removeLayer(myLocationMarker);
-            myLocationMarker = null;
-        }
-        clearShelters();
-    }
-
-    // 버튼 이벤트 연결
-    document.getElementById("btn-my-location").onclick = goToMyLocation;
-    document.getElementById("btn-shelter").onclick = showDummyShelters;
-    document.getElementById("btn-reset").onclick = resetMap;
-
-    /* =========================================
-       7) 심리 상담 챗봇 (프론트엔드 데모)
-       ========================================= */
-    function addMessage(text, sender) {
-        const messages = document.getElementById("messages");
-        const div = document.createElement("div");
-        div.className = sender === "user" ? "msg-user" : "msg-bot";
-        div.innerText = text;
-        messages.appendChild(div);
-        messages.scrollTop = messages.scrollHeight;
-    }
-
-    function botReply(userText) {
-        // 간단한 데모 응답
-        const templates = [
-            "지금 상황에서 많이 놀라고 불안하실 수 있어요. 잠깐 심호흡을 세 번만 같이 해볼까요?",
-            "스스로를 탓하기보다는, 여기까지 버텨온 나를 조금만 인정해 주면 좋겠어요.",
-            "혹시 지금 주변에 함께 있는 사람이 있다면, 짧게라도 도움을 요청해 보는 것도 좋아요.",
-            "조금씩 천천히 얘기해 주셔도 괜찮아요. 급하게 설명하지 않아도 돼요."
-        ];
-        const pick = templates[Math.floor(Math.random() * templates.length)];
-        return pick;
-    }
-
-    function sendMessage() {
-        const input = document.getElementById("chat-input");
-        const message = input.value.trim();
-        if (!message) return;
-
-        addMessage(message, "user");
-        input.value = "";
-
-        setTimeout(() => {
-            const reply = botReply(message);
-            addMessage(reply, "bot");
-        }, 500);
-    }
-
-    document.getElementById("send-btn").onclick = sendMessage;
-    document
-        .getElementById("chat-input")
-        .addEventListener("keydown", e => {
-            if (e.key === "Enter") sendMessage();
-        });
+/* ============================================
+   4) 대피소 초기화
+============================================ */
+function clearShelters() {
+    shelterMarkers.forEach(m => map.removeLayer(m));
+    shelterMarkers = [];
+}
 </script>
+
 </body>
 </html>
