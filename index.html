@@ -158,7 +158,7 @@
         .bindPopup("현재 위치 (기본값)")
         .openPopup();
 
-    /* 챗봇 기능 */
+    /* 챗봇 기능 (임시 버전) */
     function sendMessage() {
         const input = document.getElementById("chat-input");
         const message = input.value.trim();
@@ -170,9 +170,9 @@
         // 입력창 초기화
         input.value = "";
 
-        // 챗봇 응답 (임시)
+        // 챗봇 응답 (임시 더미 로직)
         setTimeout(() => {
-            let reply = "지금 많이 불안하셨겠어요. 안전한 장소에 계신가요?";
+            let reply = "지금 많이 불안하셨겠어요. 우선은 호흡을 천천히 고르고, 주변에 안전한 사람이 있는지 확인해볼까요?";
             addMessage(reply, "bot");
         }, 600);
     }
