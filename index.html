@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>재난 · 심리 지원 플랫폼</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f5f5f5;
+    }
+
+    header {
+      background: #ff4d4d;
+      color: white;
+      padding: 15px;
+      text-align: center;
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    nav {
+      display: flex;
+      background: #fff;
+      border-bottom: 1px solid #ddd;
+    }
+
+    nav button {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      background: #fff;
+      font-size: 16px;
+      cursor: pointer;
+      border-right: 1px solid #eee;
+    }
+
+    nav button.active {
+      background: #ffe5e5;
+      font-weight: bold;
+    }
+
+    section {
+      padding: 20px;
+    }
+
+    #map {
+      width: 100%;
+      height: 350px;
+      margin-top: 10px;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .card {
+      background: white;
+      padding: 15px;
+      border-radius: 10px;
+      margin: 10px 0;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    }
+
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 15px;
+      margin-top: 10px;
+      text-align: center;
+      background: #ff5c5c;
+      color: white;
+      border-radius: 10px;
+      font-size: 18px;
+      text-decoration: none;
+    }
+  </style>
+
+  <!-- 카카오맵 API -->
+  <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=카카오API키입력"></script>
+</head>
+
+<body>
+  <header>재난 · 심리 즉각 지원 플랫폼</header>
+
+  <nav>
+    <button class="active" onclick="showPage('mapPage')">지도</button>
+    <button onclick="showPage('transPage')">다국어 번역</button>
+    <button onclick="showPage('traumaPage')">심리 체크</button>
+    <button onclick="showPage('infoPage')">재난 정보</button>
+  </nav>
+
+  <!-- 📍 지도 페이지 -->
+  <section id="mapPage">
+    <h2>현재 위치 기반 대피소 & 도로 통제 상황</h2>
+    <div id="map"></div>
+
+    <div class="card">
+      🔹 **대피소 / 통제 정보는 시·도 API 연동 예정**  
+      (예: 국민재난안전포털, 지자체 API)
+    </div>
+
+    <a class="btn" href="tel:129">긴급 심리 상담 (129)</a>
+  </section>
+
+  <!-- 🌐 다국어 번역 -->
+  <section id="transPage" style="display:none;">
+    <h2>다국어 번역(임시 버전)</h2>
+    <div class="card">
+      <textarea id="translateInput" style="width:100%; height:120px;"></textarea>
+      <button class="btn" onclick="dummyTranslate()">번역하기</button>
+      <p id="translateOutput"></p>
+    </div>
+  </section>
+
+  <!-- 🧠 트라우마 심리 체크 -->
+  <section id="traumaPage" style="display:none;">
+    <h2>트라우마 반응 자가 체크</h2>
+    <div class="card">
+      <p>최근 며칠 간 아래 항목이 얼마나 있었나요?</p>
+      <label><input type="checkbox"> 갑작스러운 불안·초조</label><br>
+      <label><input type="checkbox"> 집중 어려움</label><br>
+      <label><input type="checkbox"> 사건 장면이 반복적으로 떠오름</label><br>
+      <label><input type="checkbox"> 수면 장애</label><br>
+      <label><input type="checkbox"> 예민함 증가</label><br>
+
+      <button class="btn" onclick="checkScore()">결과 보기</button>
+      <p id="traumaResult"></p>
+    </div>
+  </section>
+
+  <!-- 📢 재난 정보 -->
+  <section id="infoPage" style="display:none;">
+    <h2>재난 실시간 정보</h2>
+    <div class="card">
+      🔸 정부 재난문자 API 연동 예정 <br>
+      🔸 지역별 대피 정보 자동 안내 <br>
+      🔸 교통 통제 및 사고 정보 표시 예정
+    </div>
+  </section>
+
+  <script>
+    // 페이지 전환
+    function showPage(pageId) {
+      document.querySelectorAll("section").forEach(sec => sec.style.display = "none");
+      document.getElementById(pageId).style.display = "block";
+
+      document.querySelectorAll("nav button").forEach(btn => btn.classList.remove("active"));
+      event.target.classList.add("active");
+    }
+
+    // 더미 번역
+    function dummyTranslate() {
+      const text = document.getElementById("translateInput").value;
+      document.getElementById("translateOutput").innerText =
+        "번역(샘플): " + text;
+    }
+
+    // 심리 체크 단순 결과
+    function checkScore() {
+      const checks = document.querySelectorAll("#traumaPage input:checked").length;
+      let result = "";
+
+      if (checks <= 1) result = "정상적인 스트레스 반응입니다.";
+      else if (checks <= 3) result = "중간 수준의 스트레스 반응. 휴식 필요합니다.";
+      else result = "고위험군! 상담센터(129)에 연락하세요.";
+
+      document.getElementById("traumaResult").innerText = result;
+    }
+
+    // 카카오맵 기본 세팅
+    var mapContainer = document.getElementById('map');
+    var mapOption = {
+      center: new kakao.maps.LatLng(37.5665, 126.9780),
+      level: 5
+    };
+    var map = new kakao.maps.Map(mapContainer, mapOption);
+  </script>
+
+</body>
+</html>
