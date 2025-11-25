@@ -192,7 +192,7 @@
             font-size:13px;
             padding:8px;
             border-radius:999px;
-            border:1px solid #d1d5db;
+            border:1px solid:#d1d5db;
         }
         #send-btn{
             border:none;
@@ -275,11 +275,6 @@
 
         @media (min-width:768px){
             #map{height:320px;}
-            .layout-2{
-                display:grid;
-                grid-template-columns:2fr 1.4fr;
-                gap:10px;
-            }
         }
     </style>
 </head>
@@ -311,7 +306,7 @@
             <h2>이 사이트는 무엇을 하는 곳인가요?</h2>
             <p>
                 재난 상황에서 시민의 <b>물리적 안전(대피소 정보)</b>와 <b>심리적 안정(상담·호흡 가이드)</b>을 동시에 지원하는
-                데모 웹앱입니다. 현재는 <b>실제 정부 API 없이</b> 예시 데이터와 간단한 로직만으로 동작하는 <b>프로토타입</b 입니다.
+                데모 웹앱입니다. 현재는 <b>실제 정부 API 없이</b> 예시 데이터와 간단한 로직만으로 동작하는 <b>프로토타입</b>입니다.
             </p>
             <ul style="font-size:12px; padding-left:18px; margin:0;">
                 <li>🏥 지도 위에 <b>예시 대피소</b>와 위험지역을 시각화</li>
@@ -320,18 +315,6 @@
                 <li>✅ <b>대피·심리 체크리스트</b>를 로컬에 저장해서 반복 활용</li>
                 <li>🌿 <b>호흡·그라운딩 가이드</b>로 불안 완화 연습</li>
             </ul>
-        </div>
-
-        <div class="card">
-            <h2>사용 방법</h2>
-            <p>위의 탭을 이동하며 각 기능을 체험해볼 수 있습니다.</p>
-            <div class="pill-row">
-                <div class="pill">1️⃣ <b>대피소·지도</b>에서 위치와 대피소 보기</div>
-                <div class="pill">2️⃣ <b>재난문자 시뮬레이터</b>로 상황 선택</div>
-                <div class="pill">3️⃣ <b>심리상담 챗봇</b>에 현재 마음 이야기하기</div>
-                <div class="pill">4️⃣ <b>체크리스트</b>로 준비 상태 점검</div>
-                <div class="pill">5️⃣ <b>심리 안정 가이드</b>로 호흡/그라운딩 연습</div>
-            </div>
         </div>
     </section>
 
@@ -359,9 +342,7 @@
             <h2>재난문자 시뮬레이터</h2>
             <p>실제 재난문자를 대신해, 상황을 선택하면 예시 재난문자가 아래에 표시됩니다.</p>
 
-            <div class="alert-list" id="alert-buttons">
-                <!-- JS로 버튼 생성 -->
-            </div>
+            <div class="alert-list" id="alert-buttons"></div>
 
             <div class="alert-view" id="alert-view">
 [재난문자 예시가 여기에 표시됩니다]
@@ -374,13 +355,13 @@
         <div class="card">
             <span class="tag">Psychological First Aid</span>
             <h2>🧑‍⚕️ 심리상담 챗봇 (룰 기반)</h2>
-            <p>아래 입력창에 지금 상황이나 감정을 편하게 적어주세요. 간단한 규칙에 따라 정서지지용 답변을 제공합니다.</p>
+            <p>아래 입력창에 지금 상황이나 감정을 적어주세요. 간단한 규칙에 따라 정서지지용 답변을 제공합니다.</p>
 
             <div id="chatbox">
                 <div id="messages"></div>
                 <div id="input-area">
                     <input id="chat-input" type="text" placeholder="예: 계속 지진 뉴스가 나오니까 너무 불안해요" />
-                    <button id="send-btn" onclick="sendMessage()">전송</button>
+                    <button id="send-btn">전송</button>
                 </div>
             </div>
         </div>
@@ -438,7 +419,7 @@
         });
     });
 
-    /* ========== 지도 ========== */
+    /* ========== 지도 & 더미 대피소 ========== */
     const userIcon = L.icon({
         iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
         shadowUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-shadow.png',
@@ -591,12 +572,14 @@
     }
 
     // 최초 인사
-    addMessage("재난 상황에서 느끼는 불안, 두려움, 답답함을 편하게 적어주세요.\n위험 행동을 하려는 생각이 든다면, 반드시 112 · 119 또는 주변 어른에게 즉시 도움을 요청하세요.", "bot");
+    addMessage(
+        "재난 상황에서 느끼는 불안, 두려움, 답답함을 편하게 적어주세요.\n위험 행동을 하려는 생각이 든다면, 반드시 112 · 119 또는 주변 어른에게 즉시 도움을 요청하세요.",
+        "bot"
+    );
 
     function ruleBasedReply(message) {
         const msg = message.toLowerCase();
 
-        // 키워드 기반 간단 규칙
         if (msg.includes("불안") || msg.includes("걱정") || msg.includes("초조")) {
             return "불안감이 오래 지속되면 몸도 많이 지치죠. 지금 잠깐이라도 숨을 4초 동안 들이마시고 6초 동안 내쉬는 호흡을 5회 정도 반복해볼까요? 그리고 지금 실제로 내가 할 수 있는 '아주 작은 행동' 한 가지만 떠올려 보면 좋습니다.";
         }
@@ -616,7 +599,7 @@
             return "도움을 요청해 준 것 자체가 이미 큰 용기입니다. 지금 당장 할 수 있는 것은\n1) 내 몸을 안전한 곳으로 옮기고\n2) 숨을 고르고\n3) 믿을 수 있는 사람 또는 기관에 연락하는 것입니다.\n\n필요하다면 오늘 있었던 일을 간단히 정리해서 누군가에게 보여주는 것도 도움이 됩니다.";
         }
 
-        return "지금 들려준 이야기만 봐도 많이 버티고 있다는 생각이 들어요. 이 상황을 혼자 감당하려 하기보다는, 믿을 수 있는 사람에게 지금의 마음을 한 문장만이라도 나눠보고, 잠깐이라도 몸을 편하게 기대어 쉴 수 있는 공간을 찾아보면 좋겠습니다.\n\n원한다면, 지금 상황을 조금 더 자세히 적어줄래요?";
+        return "지금 들려준 이야기만 봐도 많이 버텨내고 있다는 생각이 들어요. 이 상황을 혼자 감당하려 하기보다는, 믿을 수 있는 사람에게 지금의 마음을 한 문장만이라도 나눠보고, 잠깐이라도 몸을 편하게 기대어 쉴 수 있는 공간을 찾아보면 좋겠습니다.\n\n원한다면, 지금 상황을 조금 더 자세히 적어줄래요?";
     }
 
     function sendMessage() {
@@ -632,7 +615,7 @@
         }, 400);
     }
 
-    // Enter 키 전송
+    document.getElementById("send-btn").addEventListener("click", sendMessage);
     document.getElementById("chat-input").addEventListener("keydown", e => {
         if (e.key === "Enter") {
             e.preventDefault();
