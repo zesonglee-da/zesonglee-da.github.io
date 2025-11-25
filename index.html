@@ -1,758 +1,335 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>재난·심리상담 긴급 지원 데모</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>재난·심리상담 긴급 지원 시스템 (계명대 성서캠퍼스 버전)</title>
 
-    <!-- Leaflet 지도 -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
+    <!-- 기본 스타일 -->
     <style>
-        :root {
-            --primary:#1f6feb;
-            --bg:#f2f4f7;
-        }
-
-        * { box-sizing:border-box; }
-
         body {
-            margin:0;
-            font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-            background:var(--bg);
-            color:#111827;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f2f4f7;
         }
 
         header {
-            background:var(--primary);
-            color:#fff;
-            padding:14px 16px;
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-        }
-        header h1{
-            font-size:17px;
-            margin:0;
-        }
-        header span{
-            font-size:11px;
-            opacity:.9;
+            background: #1f6feb;
+            padding: 15px;
+            color: white;
+            font-size: 20px;
+            text-align: center;
+            font-weight: bold;
         }
 
-        .container{
-            padding:12px;
-            max-width:960px;
-            margin:0 auto 24px;
+        .menu-container {
+            display: flex;
+            justify-content: space-around;
+            margin: 15px 10px;
+            gap: 8px;
         }
 
-        /* 상단 탭 */
-        .tabs{
-            display:flex;
-            gap:8px;
-            overflow-x:auto;
-            padding-bottom:6px;
-        }
-        .tab-btn{
-            flex:1;
-            min-width:110px;
-            border:none;
-            padding:8px;
-            border-radius:999px;
-            font-size:12px;
-            background:#e5e7eb;
-            cursor:pointer;
-            white-space:nowrap;
-        }
-        .tab-btn.active{
-            background:#111827;
-            color:#fff;
+        .menu-btn {
+            background: white;
+            border-radius: 12px;
+            padding: 12px;
+            flex: 1;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            text-align: center;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
         }
 
-        /* 카드 공통 */
-        .card{
-            background:#fff;
-            border-radius:14px;
-            padding:12px 14px;
-            margin-top:10px;
-            box-shadow:0 4px 10px rgba(15,23,42,0.08);
-        }
-        .card h2{
-            font-size:15px;
-            margin:0 0 6px;
-        }
-        .card p{
-            font-size:12px;
-            margin:0 0 8px;
-            color:#4b5563;
-        }
-        .tag{
-            display:inline-block;
-            font-size:11px;
-            background:#eff6ff;
-            color:#1d4ed8;
-            padding:2px 6px;
-            border-radius:999px;
-            margin-bottom:4px;
+        .menu-btn:hover {
+            background: #e7ecf3;
         }
 
-        /* 지도 */
-        #map{
-            height:260px;
-            border-radius:12px;
-            overflow:hidden;
-            margin-top:8px;
-        }
-        .map-controls{
-            display:flex;
-            gap:6px;
-            margin-top:8px;
-        }
-        .small-btn{
-            flex:1;
-            border:none;
-            font-size:11px;
-            padding:6px;
-            border-radius:999px;
-            background:#e5e7eb;
-            cursor:pointer;
-        }
-        .small-btn.primary{
-            background:var(--primary);
-            color:#fff;
+        #map {
+            height: 340px;
+            margin: 0 10px;
+            border-radius: 12px;
+            overflow: hidden;
         }
 
-        /* 재난문자 */
-        .alert-list{
-            display:flex;
-            gap:6px;
-            flex-wrap:wrap;
-            margin-top:6px;
-        }
-        .alert-chip{
-            border:none;
-            font-size:11px;
-            padding:6px 8px;
-            border-radius:999px;
-            background:#e5e7eb;
-            cursor:pointer;
-        }
-        .alert-view{
-            margin-top:8px;
-            background:#111827;
-            color:#fefce8;
-            padding:10px;
-            border-radius:10px;
-            font-size:11px;
-            white-space:pre-line;
+        #chatbox {
+            margin: 20px 10px 30px 10px;
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
 
-        /* 챗봇 */
-        #chatbox{
-            display:flex;
-            flex-direction:column;
-            gap:8px;
-        }
-        #messages{
-            height:220px;
-            overflow-y:auto;
-            padding:8px;
-            background:#f9fafb;
-            border-radius:10px;
-        }
-        .msg-user,.msg-bot{
-            max-width:80%;
-            padding:7px 9px;
-            margin:4px 0;
-            border-radius:10px;
-            font-size:12px;
-            line-height:1.4;
-        }
-        .msg-user{
-            margin-left:auto;
-            background:#dbeafe;
-            text-align:right;
-        }
-        .msg-bot{
-            margin-right:auto;
-            background:#fef9c3;
-        }
-        .msg-meta{
-            font-size:10px;
-            color:#6b7280;
-            margin-top:2px;
-        }
-        #input-area{
-            display:flex;
-            gap:6px;
-        }
-        #chat-input{
-            flex:1;
-            font-size:13px;
-            padding:8px;
-            border-radius:999px;
-            border:1px solid:#d1d5db;
-        }
-        #send-btn{
-            border:none;
-            padding:8px 12px;
-            border-radius:999px;
-            background:var(--primary);
-            color:#fff;
-            font-size:13px;
-            cursor:pointer;
+        #messages {
+            height: 180px;
+            overflow-y: auto;
+            padding: 10px;
+            background: #f7f7f7;
+            border-radius: 8px;
         }
 
-        /* 체크리스트 */
-        .checklist-group{
-            margin-top:4px;
-        }
-        .checklist-title{
-            font-size:13px;
-            font-weight:600;
-            margin:6px 0 4px;
-        }
-        .check-item{
-            display:flex;
-            align-items:center;
-            gap:6px;
-            font-size:12px;
-            margin-bottom:3px;
-        }
-        .check-item input{
-            width:14px;
-            height:14px;
+        .msg-user {
+            background: #d0e2ff;
+            padding: 8px;
+            margin: 6px;
+            border-radius: 8px;
+            text-align: right;
         }
 
-        /* 가이드 */
-        .step{
-            font-size:12px;
-            margin:4px 0;
-        }
-        .step span{
-            font-weight:600;
-            color:#1f2937;
-        }
-        .pill-row{
-            display:flex;
-            flex-wrap:wrap;
-            gap:6px;
-            margin-top:4px;
-        }
-        .pill{
-            font-size:11px;
-            padding:4px 8px;
-            border-radius:999px;
-            background:#e5e7eb;
-        }
-        #breath-counter{
-            font-size:26px;
-            text-align:center;
-            margin-top:6px;
-            font-weight:700;
-        }
-        #breath-phase{
-            text-align:center;
-            font-size:12px;
-            color:#6b7280;
-        }
-        #breath-btn{
-            margin-top:6px;
-            width:100%;
-            border:none;
-            padding:7px;
-            border-radius:999px;
-            background:#16a34a;
-            color:#fff;
-            font-size:13px;
-            cursor:pointer;
+        .msg-bot {
+            background: #fff5cc;
+            padding: 8px;
+            margin: 6px;
+            border-radius: 8px;
+            text-align: left;
         }
 
-        /* 탭 내용 숨김 */
-        .tab-panel{ display:none; }
-        .tab-panel.active{ display:block; }
+        #input-area {
+            display: flex;
+            margin-top: 10px;
+        }
 
-        @media (min-width:768px){
-            #map{height:320px;}
+        #chat-input {
+            flex: 1;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+        }
+
+        #send-btn {
+            padding: 10px 15px;
+            margin-left: 8px;
+            background: #1f6feb;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        #send-btn:hover {
+            background: #155acb;
         }
     </style>
-</head>
-<body>
 
+    <!-- Leaflet 지도 라이브러리 -->
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+
+<body>
 <header>
-    <div>
-        <h1>재난·심리상담 긴급 지원 데모</h1>
-        <span>API 없이 동작하는 프로토타입 (학생 개인용)</span>
-    </div>
+    재난·심리상담 긴급 지원 시스템 (계명대 성서캠퍼스)
 </header>
 
-<div class="container">
+<div class="menu-container">
+    <div class="menu-btn" id="btn-my-location">📍 내 위치 찾기</div>
+    <div class="menu-btn" id="btn-shelter">🏥 대피소 보기 (더미)</div>
+    <div class="menu-btn" id="btn-reset">🔄 지도 리셋</div>
+</div>
 
-    <!-- 상단 탭 -->
-    <div class="tabs">
-        <button class="tab-btn active" data-tab="tab-overview">홈 개요</button>
-        <button class="tab-btn" data-tab="tab-map">대피소·지도</button>
-        <button class="tab-btn" data-tab="tab-alerts">재난문자 시뮬레이터</button>
-        <button class="tab-btn" data-tab="tab-chat">심리상담 챗봇</button>
-        <button class="tab-btn" data-tab="tab-check">체크리스트</button>
-        <button class="tab-btn" data-tab="tab-guide">심리 안정 가이드</button>
+<div id="map"></div>
+
+<div id="chatbox">
+    <h3>🧑‍⚕️ 심리 상담 챗봇 (데모 버전)</h3>
+    <div id="messages"></div>
+
+    <div id="input-area">
+        <input type="text" id="chat-input" placeholder="지금 어떤 상황인지 편하게 적어 주세요." />
+        <button id="send-btn">전송</button>
     </div>
-
-    <!-- 탭: 개요 -->
-    <section id="tab-overview" class="tab-panel active">
-        <div class="card">
-            <span class="tag">Demo Prototype</span>
-            <h2>이 사이트는 무엇을 하는 곳인가요?</h2>
-            <p>
-                재난 상황에서 시민의 <b>물리적 안전(대피소 정보)</b>와 <b>심리적 안정(상담·호흡 가이드)</b>을 동시에 지원하는
-                데모 웹앱입니다. 현재는 <b>실제 정부 API 없이</b> 예시 데이터와 간단한 로직만으로 동작하는 <b>프로토타입</b>입니다.
-            </p>
-            <ul style="font-size:12px; padding-left:18px; margin:0;">
-                <li>🏥 지도 위에 <b>예시 대피소</b>와 위험지역을 시각화</li>
-                <li>📢 <b>재난문자 시뮬레이터</b>로 다양한 상황 연습</li>
-                <li>🧑‍⚕️ <b>룰 기반 심리상담 챗봇</b>으로 기본적인 정서지지 제공</li>
-                <li>✅ <b>대피·심리 체크리스트</b>를 로컬에 저장해서 반복 활용</li>
-                <li>🌿 <b>호흡·그라운딩 가이드</b>로 불안 완화 연습</li>
-            </ul>
-        </div>
-    </section>
-
-    <!-- 탭: 지도 -->
-    <section id="tab-map" class="tab-panel">
-        <div class="card">
-            <span class="tag">Map · Shelter</span>
-            <h2>대피소 및 위험지역 (예시 데이터)</h2>
-            <p>현재 위치(파란 핀)와 예시 대피소(빨간 핀), 위험지역(노란 원)을 확인할 수 있습니다. 모든 데이터는 <b>임의 예시</b>입니다.</p>
-
-            <div id="map"></div>
-
-            <div class="map-controls">
-                <button class="small-btn primary" id="btn-mypos">📍 내 위치 찾기</button>
-                <button class="small-btn" id="btn-shelters">🏥 대피소 표시</button>
-                <button class="small-btn" id="btn-risk">⚠ 위험지역 표시</button>
-            </div>
-        </div>
-    </section>
-
-    <!-- 탭: 재난문자 시뮬 -->
-    <section id="tab-alerts" class="tab-panel">
-        <div class="card">
-            <span class="tag">Alert Simulator</span>
-            <h2>재난문자 시뮬레이터</h2>
-            <p>실제 재난문자를 대신해, 상황을 선택하면 예시 재난문자가 아래에 표시됩니다.</p>
-
-            <div class="alert-list" id="alert-buttons"></div>
-
-            <div class="alert-view" id="alert-view">
-[재난문자 예시가 여기에 표시됩니다]
-            </div>
-        </div>
-    </section>
-
-    <!-- 탭: 챗봇 -->
-    <section id="tab-chat" class="tab-panel">
-        <div class="card">
-            <span class="tag">Psychological First Aid</span>
-            <h2>🧑‍⚕️ 심리상담 챗봇 (룰 기반)</h2>
-            <p>아래 입력창에 지금 상황이나 감정을 적어주세요. 간단한 규칙에 따라 정서지지용 답변을 제공합니다.</p>
-
-            <div id="chatbox">
-                <div id="messages"></div>
-                <div id="input-area">
-                    <input id="chat-input" type="text" placeholder="예: 계속 지진 뉴스가 나오니까 너무 불안해요" />
-                    <button id="send-btn">전송</button>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- 탭: 체크리스트 -->
-    <section id="tab-check" class="tab-panel">
-        <div class="card">
-            <span class="tag">Checklist</span>
-            <h2>대피·심리 체크리스트</h2>
-            <p>체크 상태는 이 브라우저에 저장됩니다(로컬스토리지). 새로고침해도 유지됩니다.</p>
-
-            <div id="checklists"></div>
-        </div>
-    </section>
-
-    <!-- 탭: 심리 안정 가이드 -->
-    <section id="tab-guide" class="tab-panel">
-        <div class="card">
-            <span class="tag">Self-care Guide</span>
-            <h2>호흡·그라운딩 심리 안정 가이드</h2>
-            <p>아주 불안할 때 따라 할 수 있는 짧은 심리 안정 스텝입니다.</p>
-
-            <div class="step"><span>1단계.</span> 주변이 비교적 안전한지 먼저 확인합니다.</div>
-            <div class="step"><span>2단계.</span> 숨을 4초 동안 들이마시고, 6초 동안 천천히 내쉽니다.</div>
-            <div class="step"><span>3단계.</span> 지금 내가 보고, 듣고, 느끼는 감각에 잠시 집중해봅니다.</div>
-            <div class="step"><span>4단계.</span> “지금 이 순간, 나는 최선을 다해 안전을 지키고 있다”라고 마음속으로 되뇌어 봅니다.</div>
-
-            <div class="pill-row">
-                <div class="pill">👀 보이는 것 5가지</div>
-                <div class="pill">👂 들리는 소리 4가지</div>
-                <div class="pill">🤚 만져지는 촉감 3가지</div>
-                <div class="pill">👃 맡을 수 있는 냄새 2가지</div>
-                <div class="pill">👅 느껴지는 맛 1가지</div>
-            </div>
-
-            <div id="breath-counter">10</div>
-            <div id="breath-phase">잠시 뒤, 호흡 연습이 시작됩니다.</div>
-            <button id="breath-btn">10초 호흡 안정 연습 시작</button>
-        </div>
-    </section>
 </div>
 
 <script>
-    /* ========== 탭 전환 ========== */
-    const tabButtons = document.querySelectorAll('.tab-btn');
-    const tabPanels = document.querySelectorAll('.tab-panel');
+    /* =========================================
+       1) 기준 좌표 설정
+       -----------------------------------------
+       - KMU_LAT / KMU_LON: 계명대역 근처 (성서캠퍼스 접근 기준)
+       - MY_LAT / MY_LON: "현재 내 위치" = 봉경관 근처로 고정
+       ========================================= */
 
-    tabButtons.forEach(btn => {
-        btn.addEventListener('click', () => {
-            tabButtons.forEach(b => b.classList.remove('active'));
-            tabPanels.forEach(p => p.classList.remove('active'));
-            btn.classList.add('active');
-            document.getElementById(btn.dataset.tab).classList.add('active');
-        });
-    });
+    // ✅ 계명대역 기준(위키 좌표) – 캠퍼스 중앙 쯤으로 보이게 사용
+    const KMU_LAT = 35.85139;
+    const KMU_LON = 128.49167;
 
-    /* ========== 지도 & 더미 대피소 ========== */
+    // ✅ "현재 내 위치" = 봉경관 근처로 약간 북쪽으로 올려서 표시 (눈으로 봤을 때 캠퍼스 안으로 들어오게)
+    const MY_LAT = 35.8530;
+    const MY_LON = 128.4917;
 
-    // 계명대학교 성서캠퍼스 봉경관 좌표
-    const BONGGYEONG_LAT = 35.851258;
-    const BONGGYEONG_LON = 128.539528;
+    /* =========================================
+       2) Leaflet 지도 초기화
+       ========================================= */
+    const map = L.map("map").setView([KMU_LAT, KMU_LON], 16);
 
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19
+    }).addTo(map);
+
+    /* =========================================
+       3) 아이콘 설정 (파란색: 내 위치 / 빨간색: 대피소)
+       ========================================= */
     const userIcon = L.icon({
-        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
-        shadowUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-shadow.png',
-        iconSize:[25,41],
-        iconAnchor:[12,41],
-        popupAnchor:[1,-34],
-        shadowSize:[41,41]
+        iconUrl:
+            "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png",
+        shadowUrl:
+            "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-shadow.png",
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41]
     });
 
     const shelterIcon = L.icon({
-        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-        shadowUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-shadow.png',
-        iconSize:[25,41],
-        iconAnchor:[12,41],
-        popupAnchor:[1,-34],
-        shadowSize:[41,41]
+        iconUrl:
+            "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png",
+        shadowUrl:
+            "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-shadow.png",
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41]
     });
 
-    // 초기 지도 위치도 봉경관 기준으로 설정
-    const map = L.map('map').setView([BONGGYEONG_LAT, BONGGYEONG_LON], 15);
+    /* =========================================
+       4) 기본 마커 (처음 지도 열었을 때 기준점)
+       ========================================= */
+    let baseMarker = L.marker([KMU_LAT, KMU_LON], { icon: userIcon })
+        .addTo(map)
+        .bindPopup("계명대 성서캠퍼스 근처 (기본 위치)")
+        .openPopup();
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-        maxZoom:19
-    }).addTo(map);
-
-    let userMarker = L.marker([BONGGYEONG_LAT, BONGGYEONG_LON],{icon:userIcon})
-        .addTo(map).bindPopup('현재 내 위치 (계명대학교 성서캠퍼스 봉경관 기준)').openPopup();
-
-    const dummyShelters = [
-        // 기존 서울 예시
-        { name:"서울시청 앞 광장 대피소 (예시)", lat:37.5668, lon:126.9785 },
-        { name:"덕수궁 돌담길 옥외대피소 (예시)", lat:37.5663, lon:126.9750 },
-        { name:"남산 공원 옥외대피소 (예시)", lat:37.5509, lon:126.9904 },
-        { name:"용산가족공원 옥외대피소 (예시)", lat:37.5234, lon:126.9806 },
-
-        // ✅ 계명대 성서캠퍼스 인근 더미 대피소 4개
-        { name:"계명대 봉경관 앞 광장 대피소 (예시)", lat:35.85145, lon:128.53960 },
-        { name:"계명대 성서캠퍼스 중앙광장 대피소 (예시)", lat:35.85060, lon:128.53880 },
-        { name:"계명대 기숙사 인근 옥외대피소 (예시)", lat:35.85220, lon:128.54020 },
-        { name:"달서구 성서동 주민대피 공간 (예시)", lat:35.84950, lon:128.54120 }
-    ];
-
+    let myLocationMarker = null;
     let shelterMarkers = [];
-    let riskCircles = [];
 
-    function clearShelters(){
+    function clearShelters() {
         shelterMarkers.forEach(m => map.removeLayer(m));
         shelterMarkers = [];
     }
-    function clearRisks(){
-        riskCircles.forEach(c => map.removeLayer(c));
-        riskCircles = [];
-    }
 
-    // ✅ 내 위치 찾기 = 항상 봉경관으로 고정
-    document.getElementById('btn-mypos').onclick = () => {
-        const lat = BONGGYEONG_LAT;
-        const lon = BONGGYEONG_LON;
-
-        map.setView([lat, lon], 16);
-
-        if (userMarker) map.removeLayer(userMarker);
-
-        userMarker = L.marker([lat, lon], { icon: userIcon })
-            .addTo(map)
-            .bindPopup("현재 내 위치 (계명대학교 성서캠퍼스 봉경관)")
-            .openPopup();
-    };
-
-    document.getElementById('btn-shelters').onclick = () => {
-        clearShelters();
-        dummyShelters.forEach(s => {
-            const m = L.marker([s.lat,s.lon],{icon:shelterIcon})
-                .addTo(map)
-                .bindPopup(`<b>${s.name}</b><br>예시 대피소 위치 (실제와 다를 수 있음)`);
-            shelterMarkers.push(m);
-        });
-    };
-
-    document.getElementById('btn-risk').onclick = () => {
-        clearRisks();
-        // 위험지역 예시: 봉경관 기준 반경 몇백 m
-        const dummyRisk = [
-            { lat:BONGGYEONG_LAT - 0.001, lon:BONGGYEONG_LON + 0.001, radius:300, level:"혼잡 가능 지역 (예시)" },
-            { lat:BONGGYEONG_LAT + 0.0015, lon:BONGGYEONG_LON - 0.001, radius:350, level:"침수 위험 가능 지역 (예시)" }
-        ];
-        dummyRisk.forEach(r => {
-            const circle = L.circle([r.lat,r.lon],{
-                radius:r.radius,
-                color:"#f97316",
-                fillColor:"#facc15",
-                fillOpacity:0.35
-            }).addTo(map).bindPopup(`⚠ ${r.level}`);
-            riskCircles.push(circle);
-        });
-    };
-
-    /* ========== 재난문자 시뮬레이터 ========== */
-    const alertPresets = [
+    /* =========================================
+       5) 더미 대피소 4곳 (계명대 성서캠퍼스 근처)
+       -----------------------------------------
+       - 실제 좌표는 아니고, 캠퍼스 주변에 자연스럽게 보이도록
+         기준점(MY_LAT, MY_LON) 근처로 배치
+       ========================================= */
+    const dummyShelters = [
         {
-            id:"earthquake",
-            label:"지진 (야간)",
-            text:
-"[행정안전부 재난문자]\n\n오늘 23:14 경 인근 지역에서 규모 4.1 지진이 발생했습니다.\n떨림을 느낀 경우 탁자 아래로 몸을 보호하고 떨어지는 물건에 주의하십시오.\n엘리베이터 사용을 자제하고, TV·라디오·공식앱을 통해 안내를 확인해 주세요."
+            name: "성서캠퍼스 대피소 1 (더미)",
+            lat: MY_LAT + 0.0010,
+            lon: MY_LON + 0.0010
         },
         {
-            id:"flood",
-            label:"호우·침수",
-            text:
-"[행정안전부 재난문자]\n\n시간당 50mm 이상의 강한 비가 예보되었습니다.\n하천변, 지하차도, 반지하 거주자는 즉시 안전한 곳으로 이동해 주십시오.\n차량은 침수 우려 지역을 피해서 운행해 주세요."
+            name: "성서캠퍼스 대피소 2 (더미)",
+            lat: MY_LAT + 0.0012,
+            lon: MY_LON - 0.0010
         },
         {
-            id:"fire",
-            label:"대형 화재",
-            text:
-"[소방청 재난문자]\n\n대형 화재 발생으로 인근 지역 대기 오염이 우려됩니다.\n창문과 출입문을 닫고 실내에 머물러주시고,\n호흡기 질환자는 외출을 자제해 주세요."
+            name: "성서캠퍼스 대피소 3 (더미)",
+            lat: MY_LAT - 0.0010,
+            lon: MY_LON + 0.0007
         },
         {
-            id:"heat",
-            label:"폭염·온열질환",
-            text:
-"[행정안전부 재난문자]\n\n폭염 경보가 발령되었습니다.\n낮 12~17시 야외 활동을 자제하고,\n물을 자주 마시며, 어린이·노약자·반려동물의 차량 방치를 절대 금지해 주세요."
+            name: "성서캠퍼스 대피소 4 (더미)",
+            lat: MY_LAT - 0.0012,
+            lon: MY_LON - 0.0008
         }
     ];
 
-    const alertButtonsContainer = document.getElementById('alert-buttons');
-    const alertView = document.getElementById('alert-view');
+    function showDummyShelters() {
+        clearShelters();
+        dummyShelters.forEach(s => {
+            const m = L.marker([s.lat, s.lon], { icon: shelterIcon })
+                .addTo(map)
+                .bindPopup(`<b>${s.name}</b><br>재난 시 활용 예정 위치 (예시)`);
+            shelterMarkers.push(m);
+        });
 
-    alertPresets.forEach(p => {
-        const btn = document.createElement('button');
-        btn.className = 'alert-chip';
-        btn.innerText = p.label;
-        btn.onclick = () => {
-            alertView.innerText = p.text;
-        };
-        alertButtonsContainer.appendChild(btn);
-    });
-
-    /* ========== 룰 기반 심리상담 챗봇 ========== */
-    const messagesEl = document.getElementById('messages');
-
-    function addMessage(text, sender) {
-        const wrapper = document.createElement('div');
-        const bubble = document.createElement('div');
-        bubble.className = sender === 'user' ? 'msg-user' : 'msg-bot';
-        bubble.innerText = text;
-        wrapper.appendChild(bubble);
-
-        const meta = document.createElement('div');
-        meta.className = 'msg-meta';
-        const now = new Date();
-        const t = now.toTimeString().slice(0,5);
-        meta.innerText = sender === 'user' ? `나 · ${t}` : `상담봇 · ${t}`;
-        wrapper.appendChild(meta);
-
-        messagesEl.appendChild(wrapper);
-        messagesEl.scrollTop = messagesEl.scrollHeight;
+        if (dummyShelters.length > 0) {
+            const first = dummyShelters[0];
+            map.setView([first.lat, first.lon], 16);
+        }
     }
 
-    // 최초 인사
-    addMessage(
-        "재난 상황에서 느끼는 불안, 두려움, 답답함을 편하게 적어주세요.\n위험 행동을 하려는 생각이 든다면, 반드시 112 · 119 또는 주변 어른에게 즉시 도움을 요청하세요.",
-        "bot"
-    );
+    /* =========================================
+       6) 버튼 기능
+       ========================================= */
 
-    function ruleBasedReply(message) {
-        const msg = message.toLowerCase();
+    // 📍 내 위치 찾기 (봉경관 근처 고정)
+    function goToMyLocation() {
+        if (myLocationMarker) {
+            map.removeLayer(myLocationMarker);
+        }
+        myLocationMarker = L.marker([MY_LAT, MY_LON], { icon: userIcon })
+            .addTo(map)
+            .bindPopup("현재 내 위치 (봉경관 근처로 고정)")
+            .openPopup();
 
-        if (msg.includes("불안") || msg.includes("걱정") || msg.includes("초조")) {
-            return "불안감이 오래 지속되면 몸도 많이 지치죠. 지금 잠깐이라도 숨을 4초 동안 들이마시고 6초 동안 내쉬는 호흡을 5회 정도 반복해볼까요? 그리고 지금 실제로 내가 할 수 있는 '아주 작은 행동' 한 가지만 떠올려 보면 좋습니다.";
-        }
-        if (msg.includes("무섭") || msg.includes("공포") || msg.includes("두렵")) {
-            return "지금 많이 무섭고 두려운 마음이 드는 것 같아요. 그 감정은 아주 자연스러운 반응입니다. 주변에 믿을 수 있는 사람(가족, 친구, 선생님)이 있다면 지금 느끼는 감정을 솔직하게 한 문장만이라도 말해보는 건 어떨까요?";
-        }
-        if (msg.includes("잠") || msg.includes("수면") || msg.includes("악몽")) {
-            return "재난 후에는 잠이 잘 오지 않거나, 악몽을 꾸는 일이 흔하게 나타납니다. 잠자기 30분 전에는 뉴스를 잠시 꺼두고, 조용한 음악이나 밝지 않은 조명을 사용해 몸에게 '이제 쉴 시간'이라는 신호를 보내주는 것이 도움 될 수 있어요.";
-        }
-        if (msg.includes("죽고") || msg.includes("살기 싫") || msg.includes("자살") || msg.includes("끝내고")) {
-            return "지금 정말 많이 힘든 상태라는 게 느껴져요. 이런 생각을 혼자만 가지고 있으면 위험할 수 있기 때문에, 반드시 주변 어른이나 전문가에게 알려야 합니다.\n\n📞 긴급 상황이라면 112 또는 119에 바로 연락해 주세요.\n📞 상담이 필요하다면 1393(자살예방 상담전화)이나 129(복지 상담)를 통해 도움을 받을 수 있어요.\n\n당신의 생명은 어떤 재난 상황보다 소중합니다.";
-        }
-        if (msg.includes("화가") || msg.includes("짜증") || msg.includes("분노")) {
-            return "재난 이후에는 불안뿐 아니라 분노와 짜증도 많이 올라올 수 있어요. 지금 화가 나는 이유를 '상황·생각·감정' 세 가지로 분리해서 적어보면 감정에 휩쓸리는 정도가 조금 줄어듭니다.";
-        }
-        if (msg.includes("도움") || msg.includes("어떻게") || msg.includes("방법")) {
-            return "도움을 요청해 준 것 자체가 이미 큰 용기입니다. 지금 당장 할 수 있는 것은\n1) 내 몸을 안전한 곳으로 옮기고\n2) 숨을 고르고\n3) 믿을 수 있는 사람 또는 기관에 연락하는 것입니다.\n\n필요하다면 오늘 있었던 일을 간단히 정리해서 누군가에게 보여주는 것도 도움이 됩니다.";
-        }
+        map.setView([MY_LAT, MY_LON], 17);
+    }
 
-        return "지금 들려준 이야기만 봐도 많이 버텨내고 있다는 생각이 들어요. 이 상황을 혼자 감당하려 하기보다는, 믿을 수 있는 사람에게 지금의 마음을 한 문장만이라도 나눠보고, 잠깐이라도 몸을 편하게 기대어 쉴 수 있는 공간을 찾아보면 좋겠습니다.\n\n원한다면, 지금 상황을 조금 더 자세히 적어줄래요?";
+    // 🔄 지도 리셋
+    function resetMap() {
+        map.setView([KMU_LAT, KMU_LON], 16);
+        baseMarker.setLatLng([KMU_LAT, KMU_LON]);
+        baseMarker.setPopupContent("계명대 성서캠퍼스 근처 (기본 위치)");
+        if (myLocationMarker) {
+            map.removeLayer(myLocationMarker);
+            myLocationMarker = null;
+        }
+        clearShelters();
+    }
+
+    // 버튼 이벤트 연결
+    document.getElementById("btn-my-location").onclick = goToMyLocation;
+    document.getElementById("btn-shelter").onclick = showDummyShelters;
+    document.getElementById("btn-reset").onclick = resetMap;
+
+    /* =========================================
+       7) 심리 상담 챗봇 (프론트엔드 데모)
+       ========================================= */
+    function addMessage(text, sender) {
+        const messages = document.getElementById("messages");
+        const div = document.createElement("div");
+        div.className = sender === "user" ? "msg-user" : "msg-bot";
+        div.innerText = text;
+        messages.appendChild(div);
+        messages.scrollTop = messages.scrollHeight;
+    }
+
+    function botReply(userText) {
+        // 간단한 데모 응답
+        const templates = [
+            "지금 상황에서 많이 놀라고 불안하실 수 있어요. 잠깐 심호흡을 세 번만 같이 해볼까요?",
+            "스스로를 탓하기보다는, 여기까지 버텨온 나를 조금만 인정해 주면 좋겠어요.",
+            "혹시 지금 주변에 함께 있는 사람이 있다면, 짧게라도 도움을 요청해 보는 것도 좋아요.",
+            "조금씩 천천히 얘기해 주셔도 괜찮아요. 급하게 설명하지 않아도 돼요."
+        ];
+        const pick = templates[Math.floor(Math.random() * templates.length)];
+        return pick;
     }
 
     function sendMessage() {
         const input = document.getElementById("chat-input");
-        const text = input.value.trim();
-        if (!text) return;
-        addMessage(text, "user");
+        const message = input.value.trim();
+        if (!message) return;
+
+        addMessage(message, "user");
         input.value = "";
 
         setTimeout(() => {
-            const reply = ruleBasedReply(text);
+            const reply = botReply(message);
             addMessage(reply, "bot");
-        }, 400);
+        }, 500);
     }
 
-    document.getElementById("send-btn").addEventListener("click", sendMessage);
-    document.getElementById("chat-input").addEventListener("keydown", e => {
-        if (e.key === "Enter") {
-            e.preventDefault();
-            sendMessage();
-        }
-    });
-
-    /* ========== 체크리스트 (로컬스토리지) ========== */
-    const checklistData = [
-        {
-            id:"shelter",
-            title:"비상 대피 준비물",
-            items:[
-                "휴대폰 및 보조 배터리",
-                "물, 간단한 비상식량",
-                "필수 복용 약, 안경/렌즈",
-                "마스크, 손 소독제",
-                "현금, 간단한 신분 확인 서류"
-            ]
-        },
-        {
-            id:"home",
-            title:"집 안 점검",
-            items:[
-                "가스 밸브 차단 위치 확인",
-                "엘리베이터 대신 계단 대피 계획",
-                "가족·동거인 대피 위치 합의",
-                "비상 연락처를 눈에 잘 보이는 곳에 붙여두기"
-            ]
-        },
-        {
-            id:"mind",
-            title:"마음 돌보기 체크",
-            items:[
-                "오늘 내가 버텨낸 것 한 가지 떠올리기",
-                "지금 느끼는 감정을 한 단어로 적어보기",
-                "몸에 힘을 천천히 주었다가 빼는 긴장 이완 3회",
-                "도움이 필요하면 요청해도 된다는 것 떠올리기"
-            ]
-        }
-    ];
-
-    const checklistRoot = document.getElementById('checklists');
-
-    function loadChecklistState(){
-        try{
-            const raw = localStorage.getItem("disaster_checklist_state") || "{}";
-            return JSON.parse(raw);
-        }catch(e){
-            return {};
-        }
-    }
-    function saveChecklistState(state){
-        localStorage.setItem("disaster_checklist_state", JSON.stringify(state));
-    }
-
-    let checklistState = loadChecklistState();
-
-    function renderChecklists(){
-        checklistRoot.innerHTML = "";
-        checklistData.forEach(group => {
-            const gDiv = document.createElement('div');
-            gDiv.className = 'checklist-group';
-
-            const title = document.createElement('div');
-            title.className = 'checklist-title';
-            title.innerText = group.title;
-            gDiv.appendChild(title);
-
-            group.items.forEach((item, idx) => {
-                const row = document.createElement('label');
-                row.className = 'check-item';
-
-                const input = document.createElement('input');
-                input.type = "checkbox";
-                const key = `${group.id}_${idx}`;
-                input.checked = !!checklistState[key];
-                input.onchange = () => {
-                    checklistState[key] = input.checked;
-                    saveChecklistState(checklistState);
-                };
-
-                const span = document.createElement('span');
-                span.innerText = item;
-
-                row.appendChild(input);
-                row.appendChild(span);
-                gDiv.appendChild(row);
-            });
-
-            checklistRoot.appendChild(gDiv);
+    document.getElementById("send-btn").onclick = sendMessage;
+    document
+        .getElementById("chat-input")
+        .addEventListener("keydown", e => {
+            if (e.key === "Enter") sendMessage();
         });
-    }
-    renderChecklists();
-
-    /* ========== 호흡 카운터 ========== */
-    const breathCounter = document.getElementById('breath-counter');
-    const breathPhase = document.getElementById('breath-phase');
-    const breathBtn = document.getElementById('breath-btn');
-    let breathInterval = null;
-
-    breathBtn.onclick = () => {
-        if (breathInterval){
-            clearInterval(breathInterval);
-            breathInterval = null;
-        }
-        let timeLeft = 10;
-        breathCounter.innerText = timeLeft;
-        breathPhase.innerText = "4초 들이마시고 · 6초 동안 내쉬는 리듬을 따라가 주세요.";
-        breathBtn.disabled = true;
-
-        breathInterval = setInterval(() => {
-            timeLeft--;
-            breathCounter.innerText = timeLeft;
-            if (timeLeft <= 0){
-                clearInterval(breathInterval);
-                breathInterval = null;
-                breathPhase.innerText = "수고했어요. 필요하다면 한 번 더 연습해볼까요?";
-                breathBtn.disabled = false;
-                breathCounter.innerText = "10";
-            }
-        }, 1000);
-    };
 </script>
-
 </body>
 </html>
