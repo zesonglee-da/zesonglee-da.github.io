@@ -95,6 +95,7 @@
         }
     </style>
 
+    <!-- Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
@@ -107,7 +108,7 @@
 
 <div class="top-buttons">
     <div class="btn" id="btn-mypos">📍 내 위치 찾기</div>
-    <div class="btn" id="btn-shelter">🏥 대피소 보기 (더미)</div>
+    <div class="btn" id="btn-shelter">🏥 대피소 보기</div>
     <div class="btn" id="btn-reset">🗺 지도 리셋</div>
 </div>
 
@@ -124,7 +125,7 @@
 </div>
 
 <script>
-// 📍 봉경관 실제 좌표 (네가 준 링크 좌표)
+// 📍 봉경관 실제 좌표 (네가 테스트해서 '딱 맞음'했던 값)
 const BONGGYEONG_LAT = 35.855279;
 const BONGGYEONG_LON = 128.485727;
 
@@ -145,7 +146,7 @@ const shelterIcon = L.icon({
 });
 
 /* 지도 초기화 */
-var map = L.map('map').setView([BONGGYEONG_LAT, BONGGYEONG_LON], 17);
+var map = L.map('map').setView([BONGGYEONG_LAT, BONGGYEONG_LON], 15);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19
 }).addTo(map);
@@ -153,7 +154,7 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 let myMarker = null;
 let shelterMarkers = [];
 
-/* 내 위치 표시 함수 */
+/* 내 위치 표시 */
 function showMyLocation() {
     if (myMarker) map.removeLayer(myMarker);
 
@@ -165,12 +166,28 @@ function showMyLocation() {
     map.setView([BONGGYEONG_LAT, BONGGYEONG_LON], 17);
 }
 
-/* 더미 대피소 예시 위치 */
+/* ✅ 실제 대피소 4개 좌표 */
 const dummyShelters = [
-    { name:"더미 대피소 A", lat: BONGGYEONG_LAT + 0.0005, lon: BONGGYEONG_LON + 0.0004 },
-    { name:"더미 대피소 B", lat: BONGGYEONG_LAT - 0.0006, lon: BONGGYEONG_LON - 0.0005 },
-    { name:"더미 대피소 C", lat: BONGGYEONG_LAT - 0.0007, lon: BONGGYEONG_LON + 0.0006 },
-    { name:"더미 대피소 D", lat: BONGGYEONG_LAT + 0.0004, lon: BONGGYEONG_LON - 0.0006 }
+    {
+        name: "계명대학교 동산병원 지하2층 주차장 대피소",
+        lat: 35.85396,
+        lon: 128.48023
+    },
+    {
+        name: "계명대역(지하2층 역사) 대피소",
+        lat: 35.85149,
+        lon: 128.49201
+    },
+    {
+        name: "강창역(지하2층 역사) 대피소",
+        lat: 35.85311,
+        lon: 128.47838
+    },
+    {
+        name: "우방유쉘(지하1층 주차장) 대피소",
+        lat: 35.85376,
+        lon: 128.47468
+    }
 ];
 
 function clearShelters() {
@@ -180,17 +197,26 @@ function clearShelters() {
 
 function showShelters() {
     clearShelters();
+
+    const boundsPoints = [];
+
     dummyShelters.forEach(s => {
         const m = L.marker([s.lat, s.lon], { icon: shelterIcon })
             .addTo(map)
-            .bindPopup(`<b>${s.name}</b><br>계명대 성서캠 근처 (예시 대피소)`);
+            .bindPopup(`<b>${s.name}</b>`);
         shelterMarkers.push(m);
+        boundsPoints.push([s.lat, s.lon]);
     });
-    map.setView([BONGGYEONG_LAT, BONGGYEONG_LON], 17);
+
+    // 대피소 4개가 전부 보이도록 지도 범위 자동 조정
+    if (boundsPoints.length > 0) {
+        const bounds = L.latLngBounds(boundsPoints);
+        map.fitBounds(bounds, { padding: [30, 30] });
+    }
 }
 
 function resetMap() {
-    map.setView([BONGGYEONG_LAT, BONGGYEONG_LON], 17);
+    map.setView([BONGGYEONG_LAT, BONGGYEONG_LON], 15);
 }
 
 /* 챗봇 (데모) */
@@ -219,7 +245,7 @@ document.getElementById("btn-mypos").onclick = showMyLocation;
 document.getElementById("btn-shelter").onclick = showShelters;
 document.getElementById("btn-reset").onclick = resetMap;
 
-/* 페이지 로드 시 자동으로 위치 표시 */
+/* 처음 로드 시 봉경관 기준으로 지도만 보여줌 */
 showMyLocation();
 </script>
 
