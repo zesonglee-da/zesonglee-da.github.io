@@ -3,16 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>재난·심리상담 긴급 지원 시스템 (계명대 성서캠퍼스 버전)</title>
+    <title>재난·심리상담 긴급 지원 시스템 (계명대 성서캠퍼스)</title>
 
-    <!-- 스타일 -->
     <style>
         body {
             margin: 0;
             font-family: Arial, sans-serif;
             background: #f2f4f7;
         }
-
         header {
             background: #1f6feb;
             padding: 15px;
@@ -21,14 +19,12 @@
             text-align: center;
             font-weight: bold;
         }
-
         .top-buttons {
             display: flex;
             justify-content: center;
             margin: 15px 0;
             gap: 15px;
         }
-
         .btn {
             background: white;
             padding: 12px 22px;
@@ -38,18 +34,15 @@
             cursor: pointer;
             box-shadow: 0 3px 6px rgba(0,0,0,0.1);
         }
-
         .btn:hover {
             background: #eaeef3;
         }
-
         #map {
             height: 360px;
             margin: 0 12px;
             border-radius: 12px;
             overflow: hidden;
         }
-
         #chatbox {
             margin: 20px 10px;
             background: white;
@@ -57,7 +50,6 @@
             padding: 15px;
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
-
         #messages {
             height: 180px;
             overflow-y: auto;
@@ -65,7 +57,6 @@
             background: #f7f7f7;
             border-radius: 8px;
         }
-
         .msg-user {
             background: #d0e2ff;
             padding: 8px;
@@ -73,7 +64,6 @@
             border-radius: 8px;
             text-align: right;
         }
-
         .msg-bot {
             background: #fff5cc;
             padding: 8px;
@@ -81,19 +71,16 @@
             border-radius: 8px;
             text-align: left;
         }
-
         #input-area {
             display: flex;
             margin-top: 10px;
         }
-
         #chat-input {
             flex: 1;
             padding: 10px;
             border-radius: 8px;
             border: 1px solid #ccc;
         }
-
         #send-btn {
             padding: 10px 15px;
             margin-left: 8px;
@@ -103,13 +90,11 @@
             border-radius: 8px;
             cursor: pointer;
         }
-
         #send-btn:hover {
             background: #155acb;
         }
     </style>
 
-    <!-- Leaflet 지도 -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
@@ -117,7 +102,7 @@
 <body>
 
 <header>
-    재난·심리상담 긴급 지원 시스템 (계명대 성서캠퍼스 버전)
+    재난·심리상담 긴급 지원 시스템 (계명대 성서캠퍼스)
 </header>
 
 <div class="top-buttons">
@@ -129,7 +114,7 @@
 <div id="map"></div>
 
 <div id="chatbox">
-    <h3>🧘‍♀️ 심리 상담 챗봇 (데모 버전)</h3>
+    <h3>🧘‍♀️ 심리 상담 챗봇 (데모)</h3>
     <div id="messages"></div>
 
     <div id="input-area">
@@ -139,17 +124,11 @@
 </div>
 
 <script>
-/* ---------------------------------------
-   🔵 0) "현재 내 위치" (검정 동그라미 좌표로 고정)
---------------------------------------- */
+// 📍 봉경관 실제 좌표 (네가 준 링크 좌표)
+const BONGGYEONG_LAT = 35.855279;
+const BONGGYEONG_LON = 128.485727;
 
-// 계명대 성서캠퍼스 중앙(네가 검은 동그라미 친 위치)
-const BONGGYEONG_LAT = 35.85305;
-const BONGGYEONG_LON = 128.53392;
-
-/* ---------------------------------------
-   🔵 Leaflet 아이콘 설정
---------------------------------------- */
+/* Leaflet 아이콘 */
 const userIcon = L.icon({
     iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
     shadowUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-shadow.png',
@@ -157,7 +136,6 @@ const userIcon = L.icon({
     iconAnchor: [12, 41],
     popupAnchor: [1, -34]
 });
-
 const shelterIcon = L.icon({
     iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
     shadowUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-shadow.png',
@@ -166,11 +144,8 @@ const shelterIcon = L.icon({
     popupAnchor: [1, -34]
 });
 
-/* ---------------------------------------
-   🗺 1) 지도 초기화
---------------------------------------- */
+/* 지도 초기화 */
 var map = L.map('map').setView([BONGGYEONG_LAT, BONGGYEONG_LON], 17);
-
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19
 }).addTo(map);
@@ -178,28 +153,24 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 let myMarker = null;
 let shelterMarkers = [];
 
-/* ---------------------------------------
-   📍 2) 내 위치 표시 (파란 마커)
---------------------------------------- */
+/* 내 위치 표시 함수 */
 function showMyLocation() {
     if (myMarker) map.removeLayer(myMarker);
 
     myMarker = L.marker([BONGGYEONG_LAT, BONGGYEONG_LON], { icon: userIcon })
         .addTo(map)
-        .bindPopup("현재 내 위치 (계명대 성서캠퍼스 중앙)")
+        .bindPopup("현재 내 위치 (봉경관 근처)")
         .openPopup();
 
     map.setView([BONGGYEONG_LAT, BONGGYEONG_LON], 17);
 }
 
-/* ---------------------------------------
-   🏥 3) 더미 대피소 리스트 (위치 자동 조정됨)
---------------------------------------- */
+/* 더미 대피소 예시 위치 */
 const dummyShelters = [
-    { name:"더미 대피소 A", lat: BONGGYEONG_LAT + 0.0007, lon: BONGGYEONG_LON + 0.0003 },
-    { name:"더미 대피소 B", lat: BONGGYEONG_LAT - 0.0005, lon: BONGGYEONG_LON - 0.0005 },
-    { name:"더미 대피소 C", lat: BONGGYEONG_LAT - 0.0008, lon: BONGGYEONG_LON + 0.0006 },
-    { name:"더미 대피소 D", lat: BONGGYEONG_LAT + 0.0004, lon: BONGGYEONG_LON - 0.0004 }
+    { name:"더미 대피소 A", lat: BONGGYEONG_LAT + 0.0005, lon: BONGGYEONG_LON + 0.0004 },
+    { name:"더미 대피소 B", lat: BONGGYEONG_LAT - 0.0006, lon: BONGGYEONG_LON - 0.0005 },
+    { name:"더미 대피소 C", lat: BONGGYEONG_LAT - 0.0007, lon: BONGGYEONG_LON + 0.0006 },
+    { name:"더미 대피소 D", lat: BONGGYEONG_LAT + 0.0004, lon: BONGGYEONG_LON - 0.0006 }
 ];
 
 function clearShelters() {
@@ -209,25 +180,20 @@ function clearShelters() {
 
 function showShelters() {
     clearShelters();
-
     dummyShelters.forEach(s => {
         const m = L.marker([s.lat, s.lon], { icon: shelterIcon })
             .addTo(map)
-            .bindPopup(`<b>${s.name}</b><br>계명대 성서캠퍼스 인근 대피소 (예시)`);
+            .bindPopup(`<b>${s.name}</b><br>계명대 성서캠 근처 (예시 대피소)`);
         shelterMarkers.push(m);
     });
+    map.setView([BONGGYEONG_LAT, BONGGYEONG_LON], 17);
 }
 
-/* ---------------------------------------
-   🗺 4) 지도 리셋
---------------------------------------- */
 function resetMap() {
     map.setView([BONGGYEONG_LAT, BONGGYEONG_LON], 17);
 }
 
-/* ---------------------------------------
-   🤖 5) 챗봇 (더미)
---------------------------------------- */
+/* 챗봇 (데모) */
 function addMessage(text, sender) {
     const msgBox = document.getElementById("messages");
     const div = document.createElement("div");
@@ -241,27 +207,20 @@ function sendMessage() {
     const input = document.getElementById("chat-input");
     const message = input.value.trim();
     if (!message) return;
-
     addMessage(message, "user");
     input.value = "";
-
     setTimeout(() => {
-        addMessage("지금 많이 긴장되셨죠. 주변에 안전한 공간이 있는지 먼저 확인해볼까요?", "bot");
+        addMessage("지금 많이 놀라셨죠. 우선 주변이 안전한지 먼저 확인해볼까요?", "bot");
     }, 700);
 }
 
-/* ---------------------------------------
-   🟦 버튼 연결
---------------------------------------- */
+/* 버튼 연결 */
 document.getElementById("btn-mypos").onclick = showMyLocation;
 document.getElementById("btn-shelter").onclick = showShelters;
 document.getElementById("btn-reset").onclick = resetMap;
 
-/* ---------------------------------------
-   첫 화면 기본 위치 표시
---------------------------------------- */
+/* 페이지 로드 시 자동으로 위치 표시 */
 showMyLocation();
-
 </script>
 
 </body>
